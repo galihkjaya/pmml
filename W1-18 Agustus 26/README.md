@@ -34,7 +34,21 @@ online-shoppers-decision-tree-optuna/
 7. **Threshold Tuning via PR Curve** — threshold optimal dicari dari prediksi *out-of-fold* di data train (`cross_val_predict`), **bukan** dari test set, supaya tidak *leak* informasi test set ke pemilihan model.
 8. **Evaluasi Final** — bandingkan performa di threshold default (0.5) vs threshold optimal pada test set yang belum pernah dilihat model.
 
-## Perbandingan 7 Model (default params, holdout test set)
+## Experiment Table
+
+| Model | Tuning | Metrik | Skor (Test Set) |
+|---|---|---|---:|
+| Logistic Regression | Default | F1 / ROC-AUC | 0.619 / 0.908 |
+| Naive Bayes (Gaussian) | Default | F1 / ROC-AUC | 0.289 / 0.581 |
+| K-Nearest Neighbors | Default | F1 / ROC-AUC | 0.212 / 0.745 |
+| Random Forest | Default | F1 / ROC-AUC | 0.665 / 0.927 |
+| XGBoost | Default | F1 / ROC-AUC | 0.662 / 0.937 |
+| LightGBM | Default | F1 / ROC-AUC | 0.664 / 0.931 |
+| **Decision Tree** | **Default** | **F1 / ROC-AUC** | **0.611 / 0.826** |
+| **Decision Tree** | **Optuna (50 trials)** — threshold 0.5 | **F1 / ROC-AUC** | **0.657 / 0.918** |
+| **Decision Tree** | **Optuna (50 trials)** — threshold optimal (0.356) | **F1** | **0.668** |
+
+### Detail Perbandingan 7 Model (default params, holdout test set)
 
 | Model | fit_time (CV, ms) | Accuracy | F1 | ROC-AUC |
 |---|---:|---:|---:|---:|
