@@ -1,0 +1,31 @@
+{
+  "model": "Decision Tree (Optuna-tuned, FINAL)",
+  "best_params": {
+    "max_depth": 13,
+    "min_samples_split": 22,
+    "min_samples_leaf": 33,
+    "criterion": "entropy",
+    "class_weight": null,
+    "ccp_alpha": 0.0005522283003781191
+  },
+  "best_cv_pr_auc": 0.7134910839164892,
+  "optimal_threshold": 0.3558282208588957,
+  "fit_time_sec": 0.09781714299998612,
+  "predict_time_test_sec": 0.010226859999988847,
+  "test_metrics_threshold_0.5": {
+    "threshold": 0.5,
+    "accuracy": 0.9012699713232282,
+    "precision": 0.719626168224299,
+    "recall": 0.6047120418848168,
+    "f1": 0.6571834992887624
+  },
+  "test_metrics_threshold_optimal": {
+    "threshold": 0.3558282208588957,
+    "accuracy": 0.8938959442851291,
+    "precision": 0.654911838790932,
+    "recall": 0.680628272251309,
+    "f1": 0.6675224646983312
+  },
+  "test_roc_auc": 0.9181387294701591,
+  "test_pr_auc": 0.6864282754051979
+}

@@ -4,77 +4,73 @@ Prediksi purchase intention (kolom `Revenue`) pengunjung e-commerce, menggunakan
 
 - **Sumber dataset:** https://archive.ics.uci.edu/dataset/468/online%20shoppers%20purchasing%20intention%20dataset
 - **Kaggle Dataset (mirror publik):** https://www.kaggle.com/datasets/dimaspashaakrilian/online-shoppers-purchasing-intention-dataset
-- **Kaggle Notebook - Preprocessing:** https://www.kaggle.com/code/dimaspashaakrilian/online-shoppers-01-preprocessing
-- **Kaggle Notebook - Modeling:** https://www.kaggle.com/code/dimaspashaakrilian/online-shoppers-02-modeling-comparison
+- **Kaggle Notebook:** https://www.kaggle.com/code/dimaspashaakrilian/online-shoppers-decision-tree-optuna
 
-Kedua notebook dijalankan di Kaggle dengan **accelerator CPU (bukan GPU T4)**, karena seluruh model yang dibandingkan adalah model klasik yang ringan secara komputasi.
+Notebook dijalankan di Kaggle dengan **accelerator CPU (bukan GPU T4)**.
 
 ## Struktur
 
 ```
 online-shoppers-purchasing-intention/
 ├── data/
-│   └── online_shoppers_intention.csv        # dataset mentah (12.330 baris x 18 kolom)
+│   └── online_shoppers_intention.csv                 # dataset mentah (12.330 baris x 18 kolom)
 ├── notebooks/
-│   ├── 01-preprocessing/
-│   │   ├── 01-preprocessing.ipynb           # EDA, cleaning, encoding, train/test split
-│   │   └── kernel-metadata.json             # metadata untuk `kaggle kernels push`
-│   └── 02-modeling/
-│       ├── 02-modeling.ipynb                # training & perbandingan 5 model
-│       └── kernel-metadata.json
+│   └── online-shoppers-decision-tree/
+│       ├── online-shoppers-decision-tree.ipynb        # notebook tunggal: preprocessing -> Decision Tree
+│       └── kernel-metadata.json                       # metadata untuk `kaggle kernels push`
 └── results/
-    └── model_comparison_results.csv         # hasil akhir perbandingan model
+    ├── final_decision_tree_metrics.json               # metrics lengkap model final
+    └── decision_tree_threshold_comparison.csv         # perbandingan threshold default vs optimal
 ```
 
-## 1. Preprocessing (`01-preprocessing.ipynb`)
+## Alur notebook (satu notebook, end-to-end)
 
-- EDA: cek missing value (tidak ada), duplikat (125 baris dibuang), distribusi target (`Revenue` imbalanced ~85% False / ~15% True).
-- Cleaning: `drop_duplicates`.
-- Encoding: `Weekend`/`Revenue` → 0/1, one-hot encoding untuk fitur kategorikal nominal (`Month`, `VisitorType`, `OperatingSystems`, `Browser`, `Region`, `TrafficType`).
-- Split train/test 80/20 (stratified) → disimpan sebagai `train.csv` / `test.csv` (output notebook, dipakai oleh notebook modeling).
+1. **EDA & Cleaning** — cek missing value (tidak ada), duplikat (dibuang), distribusi target (`Revenue` imbalanced ~85% False / ~15% True).
+2. **Feature Engineering & Encoding** — `Weekend`/`Revenue` → 0/1, one-hot encoding fitur kategorikal nominal (`Month`, `VisitorType`, `OperatingSystems`, `Browser`, `Region`, `TrafficType`).
+3. **Train-Test Split** — 80/20 stratified.
+4. **Baseline Decision Tree** — parameter default, sebagai titik pembanding.
+5. **Hyperparameter Tuning dengan Optuna** (TPE sampler, 50 trials) — objective: memaksimalkan **PR-AUC** (average precision) 5-fold cross-validation. Dipilih dibanding `GridSearchCV` karena search space mencakup parameter kontinu (`ccp_alpha`) yang lebih efisien dieksplorasi lewat Bayesian/TPE search.
+6. **Threshold Tuning via PR Curve** — threshold optimal dicari dari prediksi *out-of-fold* di data train (`cross_val_predict`), **bukan** dari test set, supaya tidak *leak* informasi test set ke pemilihan model.
+7. **Evaluasi Final** — bandingkan performa di threshold default (0.5) vs threshold optimal pada test set yang belum pernah dilihat model.
 
-## 2. Modeling (`02-modeling.ipynb`)
+## Kenapa Decision Tree?
 
-Membandingkan **5 model klasifikasi yang murah secara komputasi**, semua dijalankan di CPU:
+Proyek ini awalnya membandingkan beberapa model klasifikasi yang murah secara komputasi (Logistic Regression, Naive Bayes, KNN, Random Forest). KNN punya `fit_time` tercepat, tapi performanya (F1) jauh di bawah model lain bahkan setelah di-tuning. **Decision Tree dipilih sebagai model final** karena tetap murah (tidak perlu scaling secara konseptual, training cepat, tidak menyimpan seluruh dataset seperti KNN, tidak sebanyak pohon seperti Random Forest) sekaligus performanya jauh lebih baik dan stabil untuk target yang imbalanced.
 
-| Model | Alasan dipilih |
+## Hasil Model Final (Decision Tree, tuned dengan Optuna)
+
+**Best hyperparameters** (dari 50 trials Optuna, objective = PR-AUC 5-fold CV):
+
+| Parameter | Nilai |
 |---|---|
-| Logistic Regression | linear, training cepat, mudah diinterpretasi |
-| Decision Tree | non-linear, murah, tidak butuh scaling |
-| Naive Bayes (Gaussian) | training paling ringan (hanya hitung mean/varians) |
-| K-Nearest Neighbors | tanpa fase training eksplisit ("lazy learner") |
-| Random Forest | ensemble ringan, sebagai pembanding model yang sedikit lebih mahal |
+| `max_depth` | 13 |
+| `min_samples_split` | 22 |
+| `min_samples_leaf` | 33 |
+| `criterion` | entropy |
+| `class_weight` | None |
+| `ccp_alpha` | 0.00055 |
+| Best CV PR-AUC | 0.7135 |
 
-Perbandingan dilakukan dua sisi:
-- **Cost**: `fit_time` & `score_time` dari 5-fold cross-validation, plus waktu training/prediksi penuh di holdout test.
-- **Performa**: accuracy, precision, recall, F1-score, ROC-AUC (accuracy saja tidak cukup karena target imbalanced).
+**Evaluasi di test set (holdout, belum pernah dilihat model):**
 
-### Hasil (holdout test set)
-
-| Model | fit_time (CV, ms) | Accuracy | F1 | ROC-AUC |
+| Threshold | Accuracy | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|
-| K-Nearest Neighbors | 14.9 | 0.854 | 0.212 | 0.745 |
-| Naive Bayes (Gaussian) | 18.5 | 0.245 | 0.289 | 0.581 |
-| Decision Tree | 82.3 | 0.855 | 0.615 | 0.830 |
-| Logistic Regression | 245.6 | 0.846 | 0.619 | 0.908 |
-| Random Forest | 836.3 | 0.877 | 0.670 | 0.925 |
+| Default (0.5) | 0.901 | 0.720 | 0.605 | 0.657 |
+| **Optimal (PR curve, OOF) = 0.356** | 0.894 | 0.655 | 0.681 | **0.668** |
 
-**Ringkasan:**
-- **Termurah (waktu training tercepat):** K-Nearest Neighbors (~15 ms/fold saat CV — KNN tidak punya fase training eksplisit, hanya menyimpan data).
-- **Performa terbaik:** Random Forest (F1 & ROC-AUC tertinggi), tapi juga yang termahal (~56x lebih lambat training dibanding KNN).
-- **Trade-off terbaik:** Logistic Regression — murah, dan ROC-AUC-nya (0.908) mendekati Random Forest (0.925) tanpa biaya komputasi ensemble.
-- Naive Bayes berkinerja buruk di dataset ini (asumsi independensi antar fitur & distribusi Gaussian tidak cocok untuk data ini).
+- **Test ROC-AUC:** 0.918
+- **Test PR-AUC (average precision):** 0.686
 
-Detail lengkap ada di `results/model_comparison_results.csv` dan output masing-masing notebook di Kaggle.
+**Interpretasi:** menurunkan threshold dari 0.5 ke 0.356 (hasil optimasi PR curve di data train, bukan test set) menaikkan recall (0.605 → 0.681) dengan sedikit trade-off precision (0.720 → 0.655), menghasilkan F1 yang lebih baik. Ini relevan karena tujuan bisnis (mendeteksi sesi dengan niat beli) biasanya lebih mementingkan recall — lebih baik menangkap lebih banyak calon pembeli walau ada sedikit false positive.
+
+Detail lengkap ada di `results/final_decision_tree_metrics.json` dan output notebook di Kaggle.
 
 ## Cara reproduksi
 
-1. Buka notebook `01-preprocessing` di Kaggle → tambahkan Kaggle Dataset `dimaspashaakrilian/online-shoppers-purchasing-intention-dataset` sebagai data source → Run All (accelerator: **None/CPU**).
-2. Buka notebook `02-modeling` → tambahkan output notebook `01-preprocessing` sebagai data source → Run All (accelerator: **None/CPU**).
+1. Buka notebook di Kaggle → tambahkan Kaggle Dataset `dimaspashaakrilian/online-shoppers-purchasing-intention-dataset` sebagai data source → Run All (accelerator: **None/CPU**).
 
-Atau push langsung via Kaggle API dari folder masing-masing notebook:
+Atau push langsung via Kaggle API:
 
 ```bash
-kaggle kernels push -p notebooks/01-preprocessing
-kaggle kernels push -p notebooks/02-modeling
+kaggle kernels push -p notebooks/online-shoppers-decision-tree
 ```
