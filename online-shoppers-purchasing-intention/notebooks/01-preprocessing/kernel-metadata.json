@@ -1,0 +1,15 @@
+{
+  "id": "dimaspashaakrilian/online-shoppers-01-preprocessing",
+  "title": "Online Shoppers - 01 Preprocessing",
+  "code_file": "01-preprocessing.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["dimaspashaakrilian/online-shoppers-purchasing-intention-dataset"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

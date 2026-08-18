@@ -1,0 +1,15 @@
+{
+  "id": "dimaspashaakrilian/online-shoppers-02-modeling-comparison",
+  "title": "Online Shoppers - 02 Modeling Comparison",
+  "code_file": "02-modeling.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["dimaspashaakrilian/online-shoppers-purchasing-intention-dataset"],
+  "competition_sources": [],
+  "kernel_sources": ["dimaspashaakrilian/online-shoppers-01-preprocessing"],
+  "model_sources": []
+}
