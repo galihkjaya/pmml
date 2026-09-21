@@ -1,0 +1,15 @@
+{
+  "id": "dimaspashaakrilian/online-shoppers-decision-tree-optuna",
+  "title": "Online Shoppers Decision Tree Optuna",
+  "code_file": "online-shoppers-decision-tree.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["dimaspashaakrilian/online-shoppers-purchasing-intention-dataset"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
